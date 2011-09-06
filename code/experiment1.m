@@ -1,6 +1,10 @@
 % comparing feature distribution of various VAD's
 %
 
+if matlabpool('size')==0
+    matlabpool open;
+end
+
 load('./speakers.mat');
 nSpeakers = length(SPEAKERS);
 
@@ -14,7 +18,7 @@ nfft = 1024; %2^nextpow2(Nw*4);
 energy = @(x) sum(enframe(x,Nw,Nsh).^2,2);
 
 % initialize noise signal
-[n,n_fs] = read_audio('../NOISEX-92/babble.wav','wav');
+[n,n_fs] = read_audio('../NOISEX-92/white.wav','wav');
 n = resample(n,fs,n_fs); % NOISEX-92 data was sampled at 19980Hz
 n = n/max(abs(n));
 En = energy(n);      
@@ -36,31 +40,17 @@ n_Gain = zeros(nSpeakers,nSNR); % debug purpose, vector of noise gains
 fx = cell(nSNR,nSpeakers); % feature value for signal
 fn = cell(nSNR,nSpeakers); % feature value for noise
 
-% load data
-RELOAD_DATA = true;
-if RELOAD_DATA
-    disp('Loading speech data...');
-    speech = cell(size(SPEAKERS));
-    for i=1:nSpeakers
-        speech{i} = load([SPEAKERS{i},'/data.mat']);
-    end
-end
+nSpeakersUsing = 100; % 100 speakers, 1000 utterances
 
 for snrcnt=1:nSNR
     snr = SNR(snrcnt);
     fprintf('SNR=%d dB--------------------------------------------\n',snr);
-    for s = 1:nSpeakers
-        fprintf('(%3d%%) %s\n',round(s/nSpeakers*100),SPEAKERS{s});
-        x = speech{s}.x;
-        ref = speech{s}.ref;
     
-    %     subplot(311);
-    %     plot(x,'Color',[.85,.85,.85]);
-    %     hold on;
-    %     plot(r*max(x)/2,'r');
-    %     hold off;
-    %     axis tight;
-
+    parfor s = 1:nSpeakersUsing
+        data = load([SPEAKERS{s},'/data.mat']);
+        x = data.x;
+        ref = data.ref;
+        
         % add noise to the desired SNR
         assert(length(n)>length(x));
         Ex = energy(x);
@@ -71,25 +61,58 @@ for snrcnt=1:nSNR
         n1 = n*n_gain;                  % adjust the signals
         y  = x + n1(1:length(x));
 
-    %     subplot(312);
-    %     plot(y,'Color',[.8,.8,.8]);axis tight;
-
         n_sample = n(end-fs*20:end);    % sample noise for calibration: last 20s
-        rmr = vadramirez04(nfft,fs,Nw,Nsh,n_sample,5);
-        [~,d] = rmr.ltsd(y);
-    %     subplot(313);
-    %     plot(d);axis tight;
+%         rmr = vadramirez04(nfft,fs,Nw,Nsh,n_sample,5);
+%         [~,d] = rmr.ltsd(y);      
 
-        fx{snrcnt,s} = d(ref==1);
-        fn{snrcnt,s} = d(ref==0);
+        pp = struct;
+        pp.ti = Nsh/fs;                 % frame increment in seconds
+%         pp.xn = min(snr,0);             % minimum prior SNR
+        [~,z] = vadsohn(n_sample,fs,'bn');
+        d = vadsohn(y,z,'bn');
+        d = d(:,3);
+
+        fx{snrcnt,s} = [fx{snrcnt,s};d(ref==1)];
+        fn{snrcnt,s} = [fn{snrcnt,s};d(ref==0)];
+        
+%         subplot(311);
+%         plot(x,'Color',[.85,.85,.85]);
+%         hold on;
+%         plot(r*max(x)/2,'r');
+%         hold off;
+%         axis tight;
+%         subplot(312);
+%         plot(y,'Color',[.8,.8,.8]);axis tight;
+%         subplot(313);
+%         plot(d);axis tight;
+        
+%         fprintf('(%3d%%) %s\n',round(s/nSpeakers*100),SPEAKERS{s});
+        fprintf('.'); if mod(s,10)==0, fprintf('\n'); end
+        
     end
+    
+    FX = []; FN = [];
+    for s=1:nSpeakersUsing
+        FX = [FX;fx{snrcnt,s}];
+        FN = [FN;fn{snrcnt,s}];
+    end
+    
     figure(snrcnt);
-    [cx,xx] = hist(fx{snrcnt},50);
-    [cn,nn] = hist(fn{snrcnt},50);
+    [cx,xx] = hist(FX,100);
+    [cn,nn] = hist(FN,100);
     plot(xx,cx/trapz(xx,cx),'b',nn,cn/trapz(nn,cn),'r');
     title(['SNR=',num2str(snr),'dB']);
 
 end
-save('experiment1_rmr04_babble.mat','fx','fn','SNR','fs','Nw','Nsh','nfft');
+save('experiment1_sohn_white.mat','fx','fn','SNR','fs','Nw','Nsh','nfft');
 
-
+d = zeros(nSNR,1);
+for snrcnt=1:nSNR
+    FX = []; FN = [];
+    for s=1:nSpeakersUsing
+        FX = [FX;fx{snrcnt,s}];
+        FN = [FN;fn{snrcnt,s}];
+    end
+    d(snrcnt) = bhattacharyya(FX,FN);
+end
+plot(SNR,d);
