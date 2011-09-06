@@ -10,6 +10,6 @@ for i=1:Lr
     x(sidx:eidx) = x(sidx:eidx)+ones(Nw,1)*r(i);
 end
 
-x = x==max(x);
+x = x>=round(max(x)/2);
 
 end

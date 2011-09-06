@@ -4,24 +4,23 @@
 %
 classdef vadramirez04
     
-    % default values are as suggested pp 8--9, Fig.5
     properties
-        NFFT=256
-        fs=8000     % sampling rate
-        Nw=160      % window size
-        Nsh=80      % window shift size
+        NFFT
+        fs          % sampling rate
+        Nw          % window size
+        Nsh         % window shift size
         win         % the hamming window
         
-        M=13        % number of neighbour frames each side used to calculate LTSE
+        M           % number of neighbour frames each side used to calculate LTSE
         
         % noise updating:
         N           % average noise spectrum
-        E0=30       % energy of the cleanest condition
-        E1=50       % energy of the noisiest condition
-        gamma0=6    % low energy threshold
-        gamma1=2.5  % high energy threshold
-        K=3         % number of neighbor frames (each side) for updating noise spectrum
-        alpha=0.95  % noise spectrum updating rate
+        E0          % energy of the cleanest condition
+        E1          % energy of the noisiest condition
+        gamma0      % low energy threshold
+        gamma1      % high energy threshold
+        K           % number of neighbor frames (each side) for updating noise spectrum
+        alpha       % noise spectrum updating rate
     end
     
     methods
@@ -44,10 +43,12 @@ classdef vadramirez04
             obj.E1 = max(enrgy);
 
             obj.M = M;
+            obj.K = 3;
+            obj.alpha = 0.95;
         end
         
         % computes the Long-Term Spectral Divergence feature vector
-        function d = ltsd(obj,s)
+        function [flag,d] = ltsd(obj,s)
             
             % compute the speech spectrum
             x = enframe(s,obj.win,obj.Nsh);
@@ -56,9 +57,17 @@ classdef vadramirez04
 
             L = size(X,2);                   % number of frames
             d = zeros(L,1);                  % M-order LTSD
+            flag = zeros(L,1);
             for l=1+obj.M:L-obj.M
                 ltse = max(X(:,l-obj.M:l+obj.M),[],2); % max by column. Equation (1)
                 d(l) = 10*log10(ltse'.^2 * (1./obj.N.^2)/obj.NFFT); % just following the paper. Equation (2)
+                
+%                 e = X(:,l)' .* X(:,l);      % frame energy
+%                 flag = d(l)<obj.threshold(e); % vad decision
+%                 if ~flag                    % update noise spectrum
+%                     obj.updateN(X,l);
+%                 end
+                flag(l) = NaN; % not implemented
             end
         end
         

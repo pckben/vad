@@ -1,5 +1,7 @@
 
-function x = read_audio(filepath,type)
+function [x,fs] = read_audio(filepath,type)
+    
+    fs = [];
     
     if nargin<2, type='sphere'; end
     fid = fopen(filepath,'r');
@@ -13,7 +15,7 @@ function x = read_audio(filepath,type)
         x = x(513:end); % remove SPHERE header
     elseif strcmpi(type,'wav')==1
         % WAV:
-        x = wavread(filepath);
+        [x,fs] = wavread(filepath);
     elseif strcmpi(type,'pcm')==1
         % PCM:
         x = fread(fid,inf,'int16');
