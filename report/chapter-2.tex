@@ -1,0 +1,25 @@
+%---------------------------------------------------------------------------------
+\chapter{Literature Survey}
+\label{chap:Literature-Survey}
+%---------------------------------------------------------------------------------
+
+As a critical modules for many speech processing applications, VAD has received considerable research interests in the last couple of decades. 
+It started as early as in the 1970s, when VAD was often referred to as speech endpoint detection or word boundary detection problem. 
+Back in that time, VAD algorithms often deal with only little or no noise corruption in speech coding applications, 
+and with separate recording utterances in speech recognition systems. 
+Up to recently, advances in various speech applications require the detection of human speech in a continuous real-time fashion, 
+and is often corrupted by a wide variety classes of noise. Algorithms for VAD had grown accordingly over the years. 
+Unfortunately, given the vast variety of VAD techniques proposed in the literature, no work has been found to sufficiently study and compare the state-of-the-art techniques. 
+It is part of this research's contributions to provide an extensive and up-to-date literature survey for VAD.
+
+The core of any VAD is proposed to be consisted of two parts: a `feature extraction' and a `speech/ non-speech decision mechanism.' 
+The first part extracts from the given speech signal the parameters that can represent the discriminative characteristics of speech comparing to noise. 
+Using these parameters, the second part makes the final speech/non-speech decision, based on a set of decision rules.
+
+The rest of this chapter reviews these two processes in more details. 
+It first introduces different features proposed in literature, divided into categories; and then, the approaches to speech/non-speech decision mechanism are studied.
+
+%TODO: briefing section
+
+\input{features}
+\input{decision_rules}

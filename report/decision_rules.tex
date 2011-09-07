@@ -1,0 +1,121 @@
+\section{Decision rules for VAD}
+After a set of feature vectors is extracted from the original signal, the next step is to determine their categories (speech/non-speech). In a pattern classification problem such as VAD, a decision rule is achieved by defining a set of \emph{decision boundaries} that partition the feature space into different regions, each of which is assigned to a single class.
+
+In the past couple of decades, there has been many techniques proposed for VAD in the literature, which can be categorized as the following:
+
+%\begin{description}
+	%\item[Thresholding] which is the most straight-forward method to discriminate speech from noise, especially when the extracted feature vector consists of a single measure, such as in the case of energy-based features.
+	%\item[Statistical modelling approaches] which normally involve the training of statistical models to represent speech and noise, and then decide the best one among them to represent a given testing feature vector.
+	%\item[Machine learning approaches] which employ a wide class of methods from machine learning theory, which often have been successfully used in other computational problems.
+%\end{description}
+\begin{itemize}\addtolength{\itemsep}{-0.5\baselineskip}
+	\item Thresholding
+	\item Statistical modelling approaches
+	\item Machine learning approaches
+\end{itemize}
+
+The remaining of this section will review these techniques in more details.
+
+\subsection{Thresholding}
+% what is threshold and why use it
+Thresholding is the simplest form of decision boundary in which a line (or a set of lines) is used to define the regions for each classes in the feature space. If the extracted feature is a scalar $y \in \realnumber$, a single threshold $\eta$ is used to divide the $\realnumber$ space into two part. We assign the frames that have $y\ge\eta$ to the speech class, and those with $y<\eta$ to the non-speech classs \cite{haigh1993robust,ghosh2011robust}. In cases where each feature is a vector $\vt{y}\in\realnumber^N$, a vector of thresholds $\boldsymbol{\eta}$ can be used to divide each dimension of $\realnumber^N$ in a similar manner \cite{sohn1998voice,ramirez2004efficient,woo2000robust}.
+\begin{equation}
+    y \test{speech}{noise} \eta
+\end{equation}
+
+% using more than 1 threshold for upper and lower bounds, activation and deactivation bounds
+Some papers employed more than one threshold to detect both activation and deactivation transitions \cite{huang2000novel,rabiner1975algorithm}. A threshold $\eta_1$ represents the maximum non-speech parameter values and detects the non-speech-to-speech transitions (or the onset transitions); while another threshold $\eta_2$ represents the minimum speech parameter values and detect the speech-to-non-speech transitions (or the offset transitions). The duration between these two transitions is then assigned to be speech.
+
+% adaptive thresholds
+The thresholds are often pre-estimated empirically, based on the distribution of the extracted features in the training data set \cite{sohn1998voice,ishizuka2006study}. In applications where noise condition keeps changing, however, a fixed value of theshold won't work well \cite{ghosh2011robust}. Thus, adaptive threshold schemes are needed. Ramirez \etal \cite{ramirez2004efficient} and Evangelopoulos \etal \cite{evangelopoulos2005speech} employed a linear calibration curve to adjust the threshold $\eta$ as a function of signal energy $E$, whose values vary between $E_0$ and $E_1$, the minimum and maximum energies measured from the training data. If the threshold estimated at these two extreme conditions are $\eta_0$ and $\eta_1$ respectively, the threshold for a certain energy $E$ is given as follow:
+\begin{equation}\label{eq:threshold_calibration}
+	\eta = \left\{
+        \begin{array}{ll}
+            \eta_0  & E \le E_0 \\
+            \frac{\eta_0-\eta_1}{E_0-E_1} E + \eta_0 - \frac{\eta_0-\eta_1}{1-E_1/E_0} & E_0<E<E_1 \\
+            \eta_1  & E \ge E_1
+        \end{array}
+    \right.
+\end{equation}
+
+Most other research employed a running average scheme in which a learning factor $\alpha$ is used to control the threshold updating rate. Given a new noise parameter $n$, the threshold representing the onset transition is updated as:
+\begin{equation}\label{eq:adaptive_threshold}
+	\hat{\eta} = \alpha\eta + (1-\alpha)n
+\end{equation}
+In this equation, a smaller $\alpha$ causes the threshold to be more sensitive to the noise fluctuation, which can be beneficial in situations where the background noise constantly changes. On the other hand, a larger $\alpha$ causes the threshold to be more conservative to changes, and might be desirable in conditions that have infrequent changes of background. Ghosh \etal \cite{ghosh2011robust} proposed a modified version of \eq{adaptive_threshold}:
+\begin{equation}\label{eq:adaptive_threshold_ghosh}
+	\hat{\eta} = \alpha\min{\vt{y}} + (1-\alpha)\max{\vt{n}}
+\end{equation}
+Here, the threshold is updated based on the minimum of the last $K$ speech values $\vt{y}$ and $K$ noise values $\vt{n}$. The learning factor $\alpha$ is used to control the learning rate in the same manner. This seems to be a better method, as it takes into account the fact that the feature values for speech and noise has a certain overlapped region, which is marked by the minimum of speech values and the maximum of noise values -- assuming that speech values are higher than noise in the mean sense.
+
+If the features extracted from the previous section has great discriminative power and its feature space is linearly separable, using thresholds might be sufficient. However, when the speech signal is corrupted by noise, its linear separability is decreased. To some certain degree of noise, the linear decision boundaries can no longer separate the class regions. Therefore, nonlinear methods such as the statistical model-based and machine learning-based approaches introduced below are preferred.
+
+\subsection{Statistical modelling approaches}
+% LRT based using GMM models
+A statistical decision rule deriving from the generalized likelihood ratio test (LRT) was first proposed in \cite{sohn1998voice}. In this method, noisy speech and background noise are assumed to be independent Gaussian random processes. Thus, their DFT coefficients can be modelled as Gaussian random variables that are asymptotically independent. The method considers two hypotheses, $H_N$ and $H_S$, for non-speech and speech, respectively. Given a frame spectrum $\vt{X}_k$, the probability density functions conditioned on each hypothesis are computed as:
+\begin{align}
+	p(\vt{X}_k|H_N) &= \prod_{i=1}^L \reci{\pi\lambda_N(i)} \exp \left(-\frac{|X_{k,i}|^2}{\lambda_N(i)} \right) \\	
+	p(\vt{X}_k|H_S) &= \prod_{i=1}^L \reci{\pi\left(\lambda_N(i)+\lambda_S(i)\right)} \exp \left(-\frac{|X_{k,i}|^2}{\lambda_N(i)+\lambda_S(i)} \right)
+\end{align}
+where $\lambda_N(i)$ and $\lambda_S(i)$ denote the variances of the estimated spectrums of noise and speech, repsectively. These parameters can be obtained by applying the noise estimation and noise subtraction techniques on the training data set. After that, the likelihood ratio for the $i$-th frequency band $\Lambda_i$, and the final decision statistic $\Lambda$ is obtained as follow:
+\begin{align}
+	\Lambda_i &= \frac{p(\vt{X}_k|H_S)}{p(\vt{X}_k|H_N)} \\
+	\log \Lambda &= \reci{L} \sum_{i=1}^L \log \Lambda_i \test{H_S}{H_N} \eta \label{eq:LRT}
+\end{align}
+
+In \cite{sohn1999statistical}, the author pointed out that this test is biased towards $H_S$, due to the left-hand side of \eq{LRT} cannot be smaller than zero. A new method is proposed which uses the decision-directed (DD) method \cite{ephraim1984speech} to reduce the fluctuation of the estimated likelihood ratios during noise-only periods.
+Later, Cho \emph{et al.} \cite{cho2001improved} identified the problem of this method having frequent detection errors at the speech to non-speech transition regions, due to the delayed noise variance term in the DD estimator for calculating the \emph{a priori} SNR.
+To overcome this problem, the authors proposed the smoothed LRT method, which reduced the abrupt changes of the likelihood ratio at the speech to non-speech transition regions and thus improved the performance.
+In \cite{ramirez2005statistical}, Ramirez \emph{et al.} extended the method even further by incorporating multiple observation from the neighbouring frames.
+The proposed method, dubbed the multiple observation likelihood ratio test (MO-LRT), computes the joint probabilities conditioned on $H_N$ and $H_S$ of the $2m+1$ contiguous frames, including the past and future $m$ frames, and tests them against a threshold.
+It was reported that the method improved the decision robustness against acoustic noise present in the environment.
+However, by considering the $m$-frame neighbourhood, this test implicitly introduces a non-controllable hangover mechanism, as pointed out by Ramirez \emph{et al.} \cite{ramirez2007improved}.
+The authors then proposed a revised method that tests all the $2^{2m+1}$ possible hypotheses defined over the multiple observation vectors, thus eliminates the implicit hangover and leaves rooms for further improvement.
+% TODO: study (Cho,2001), (Ramirez, 2007) and papers cited them, for eg. (Mak,2010) Robust Voice Activity Detection for Interview Speech in NIST Speaker Recognition Evaluation
+
+% introduce other models
+Conventionally, it is assumed that the distribution of clean speech and noise spectra can be modelled by the Gaussian densities (\eq{pdf_GD}) \cite{sohn1998voice,sohn1999statistical,cho2001improved,ramirez2005statistical,ramirez2007improved}. In order to improve the performance of the statistical modelling VAD techniques, several researchers tried to find a model that fits the distribution of speech better. Martin \cite{martin2002speech} reported that the Gamma and Laplacian distributions (Equations \ref{eq:pdf_gammaD} and \ref{eq:pdf_LD}, respectively) can better model the coefficients of the clean speech and noise, respectively. Instead of separating clean speech and noise in different distributions, Chang \etal \cite{chang2003voice,chang2004voice} later proposed to use the complex Laplacian distribution \cite{chang2003voice} and the generalized Gaussian distribution \cite{chang2004voice} to model the noisy speech signal directly and reported improved results. To compare the fitness of each distribution for speech modelling, Gazor and Zhang \cite{gazor2003speech} performed the Komogorov-Smirmov test \cite{reininger1983distributions} on the various widely known speech distributions across different domains. The results showed that speech signal during active intervals can be best modelled by a Laplacian distribution in the time domain, as well as in various decorrelated domains such as the Karhunen-Loeve Transform (KLT) and Discret Cosine Transform (DCT), while the edge frames of the speech segments favor a gamma distribution.
+\begin{align}
+	\operatorname{GD:} \quad  f^g_{\vt{x}}(x) &= \reci{\sqrt{2\pi\sigma^2}} \exp \left( -\frac{x^2}{2\sigma^2} \right) \label{eq:pdf_GD} \\
+	\operatorname{LD:} \quad  f^L_{\vt{x}}(x) &= \reci{2a} \exp \left(-\frac{|x|}{a} \right) \label{eq:pdf_LD} \\
+	\operatorname{\gamma D:} \quad  f^\gamma_{\vt{x}}(x) &= |x|^h \exp \left(-\frac{|x|}{a} \right) \reci{2h!a^{h+1}} \label{eq:pdf_gammaD} \\
+	\operatorname{GGD:} \quad  f^{G}_{\vt{x}}(x) &= \frac{\upsilon\alpha(\upsilon)}{2\sigma\Gamma(1/\upsilon)} \exp \left(-\left[\alpha(\upsilon)\frac{|x|}{\sigma}\right]^\upsilon \right) \label{eq:pdf_GGD} \\
+	\operatorname{G\Gamma D:} \quad  f^\Gamma_{\vt{x}}(x) &= \frac{\gamma\beta^\eta}{2\Gamma(\eta)}|x|^{\eta\gamma-1}\exp\left(-\beta|x|^\gamma\right) \label{eq:pdf_GgammaD}
+\end{align}
+
+In reality, speech signals are often affected by different speaker-generated random factor, such as the speaker's temper, emotion, health, gender, age, etc. Thus, recent works on the distribution of speech \cite{shin2005statistical,shin2010voice,petsatodis2011convex} suggested that using a more generic model that can be adapted to different distributions is preferred. Recently, Shin \etal \cite{shin2005statistical} proposed the Two-sided Generalized Gamma Distribution (G$\Gamma$D, \eq{pdf_GgammaD}) for modelling the speech spectra. Using a similar test as mentioned above, the authors showed that G$\Gamma$D can model the distribution of the speech spectra even more accurately. Due to its highly generic form, G$\Gamma$D can be configured to cover different distributions. For example, when $\gamma=1$, G$\Gamma$D defines a gamma pdf; when $\eta\gamma=1$, it becomes a GGD. If $\gamma=2$ and $\eta=0.5$, it represents the GD; and if $\gamma=1$ and $\eta=1$ the LD \cite{shin2005statistical}.
+
+Chang \etal \cite{chang2006voice} extends the concept by introducing a switching mechanism to automatically chooses a suitable model that best fits the speech distribution. For every $K$ frames, the proposed technique performs an online Komogorov-Smirmov test on a set of preferred distributions and adopts the best one to use in a LRT-based decision rule for the next frames.
+Towards this direction, Petsatodis \etal \cite{petsatodis2011convex} suggested to use not only the auto-switching mechanism to choose different statistical models for different situations, but also to combine multiple distributions for modelling the speech signal in each frame. This can be done using a convex combination of multiple models \cite{petsatodis2011convex}, whose influence on the final speech model at any given time is determined by a set of weights. The outcome showed an improve modelling capability, which better captures the statistic of speech even under adverse noise conditions and reverberation effects. %(TODO: confirm on the results)
+
+%In all the aforementioned studies in speech distribution, the statistical models were used to fit the entire speech spectrum, which makes their performance questionable in other feature domain. Tan \etal \cite{tan2010voice} studied its performance on the harmonic spectra...
+
+% GARCH models
+%TODO: GARCH model (the above distributions only model speech in the spectral domain, GARCH model can....?)
+
+TODO: Read first part of Cohen2004 which explain the improvemnt of speech modelling using GARCH.
+
+\subsection{Machine learning approaches}
+%Read those face recognition survey papers on how they introduce this class of techniques.
+% OK, my target is only 1 page for this whole thing.
+
+% why using machine learning approaches, what's the difference compared to statistical modelling approaches?
+Recently, there has been a large interest in employing machine learning techniques as the decision rules for VAD. Many methods have been proposed in the last decade such as Support Vector Machine, Maximum Marginal Clustering, Neural Networks, Linear Discriminal Analysis, Boosting algorithms and Genetic algorithms. This section gives an overview of the machine learning techniques have been applied to VAD, their advantages and disadvantages are also discussed.
+
+Suport Vector Machine (SVM) is a non-probabilistic binary classifier, which has been used successfully in many computational problems such as handwritten character recognition, face detection, image classification, speaker verification \cite{duda2001pattern}. It aims to construct a hyperplane in the feature space that maximize the margin between the two classes. In \cite{enqing2003applying}, SVM was applied directly to VAD, leveraging the same set of features recommended by the G.729B standard. The authors reported 4\% absolute improvement of detection accuracy. In a similar manner, Ramirez \etal \cite{ramirez2006svm,ramirez2006speech_svm} applied SVM to the LTSD features \cite{ramirez2004efficient}, and Kinnunen \etal \cite{kinnunen2007voice} the MFCC features. Both have reported improved VAD performance comparing to other decision rules on the same feature set. These results suggest that the marginal performance was due to SVM alone.
+
+One weakness of SVM is that it is sensitive to noise. In theory, if the training labels are perfect, SVM can give an optimal margin hyperplane that will lead to the minimal classification error. In practice, however, this is impossible in noisy scenarios, causing SVM performance to degrade \cite{wu2011maximum}.
+The Maximum Marginal Clustering (MMC) technique \cite{xu2005maximum,wang2010linear} extends the idea of SVM, but remove the dependency on training labels by finding not only the maximm margin hyperplane in the feature space, but also the optimal label vector that maximizes the margin among all possible label vectors \cite{xu2005maximum}. Recently, Wu and Zhang \cite{wu2011maximum} have proposed using MMC as the decision rule for VAD. Although the results showed little improvement to existing approaches using SVM, it has no dependency on the training labels, and is therefore more desirable.
+
+Martin \etal \cite{martin2001robust,martin2006robust} proposed the use of Linear Discriminant Analysis (LDA) for VAD. Intuitively, LDA aims to find a linear combination of features from the feature vector, which best characterizes the speech events. Effectively, LDA acts as both a dimensionality reduction process and a fusing technique, which can be beneficial when multiple feature vectors are combined. For example, Martin \etal \cite{martin2001robust} employed LDA on MFCC+energy features, while Padrell \etal \cite{padrell2005robust} on spectral-based features. Unfortunately, their results were only tested with the speech coder standards (GSM, AFE), no recent VAD techniques were included in the comparison.
+
+There were several other machine learning techniques proposed in the literature for VAD. Kwon and Lee \cite{kwon2003optimizing} used AdaBoosting algorithm \cite{schapire1999improved} to combine a set of weak classifiers to generate a stronger one. Boosting is a successful technique in several other applications such as face detection \cite{viola2001rapid} and music classification \cite{bergstra2006aggregate}, which can achieve high accuracy while preserving a low complexity. Usukura and Mitsuhashi \cite{usukura2008voice} applied AdaBoost on both long-term and short-term features and showed superior results comparing to the statistical model approach \cite{sohn1999statistical}. Other natural inspired machine learning techniques such as neural networks \cite{farsinejad2008model,pham2009using} and genetic algorithms \cite{estevez2005genetic,farsinejad2008new} were also proposed for VAD decision making. All of these works reported improved VAD performance over the G.729B system, but did not carry out any extensive comparison on modern VAD techniques. Their actual performance comparing to state-of-the-art VAD systems are, therefore, still questionable.
+
+\subsection{Summary}
+This section has reviewed many decision rules for VAD proposed in the literature, which can be categorized into three classes: thresholding, statistical modelling and machine learning approaches. The thresholding decision rules appeared to be the most commonly used technique, due to their simplicity and low complexity. These techniques often require the features extracted to be sufficiently discriminative and noise robust. To some certain degree of noise, however, the feature space is no longer linearly separable, causing the performance to drop drastically. More sophisticated non-linear approaches are therefore required.
+
+In the statistical modelling approaches, many researchers have worked extensively to find a distribution that best captures the characteristics of the speech signal. The Two-sided Generalized Gamma Distribution was proposed to be the best model for speech in many domains due to its highly generic form. Others have proposed to employ multiple distributions to model speech, either separately in an online switching machine, or together in a mixture of models. However, these models were studied using the entire frame spectrum. Their application to other features such as sub-band energies, harmonicity or long-term features is still not clear.
+
+Finally, many machine learning approaches were proposed for VAD in the last decade. Among these methods, SVM and MMC appear to be the most studied and have the best performance. Other techniques such as LDA, boosting, neural networks and genetic algorithms were proposed and showed improved performance over the standard VADs; but they all lack of sufficient comparison with more modern VAD systems.
+
+

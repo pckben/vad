@@ -1,0 +1,89 @@
+%& -output-directory=./output -aux-directory=./aux
+
+\documentclass[12pt,a4paper,twoside]{report}
+
+% figure caption customization
+\usepackage[
+    margin=20pt,
+    font=small,
+    labelfont=bf,
+    %labelsep=endash
+    ]{caption}
+
+%--------------------------------------------------------
+\usepackage[dvips]{graphicx}
+\usepackage{subfig}        
+\graphicspath{{figures/}} % put figures in a separate folder
+
+%--------------------------------------------------------
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+}
+
+%--------------------------------------------------------
+% subsubsection no line break
+\usepackage{titlesec}
+
+\titleformat{\subsubsection}[runin]
+{\normalfont\bfseries}{\thesubsubsection}{1em}{}
+
+%--------------------------------------------------------
+\input{settings.tex}            % preamble, settings for globle control
+
+\begin{document}
+
+   % alpha
+
+\input{title.tex}         % front cover page
+\maketitle
+
+\setlength{\baselineskip}{20pt plus 1pt minus 1pt}  % 1-1/2 spacing for whole document
+
+% ~~~~~~~ contents, list of figures, list of tables ~~~~~~~~~
+\pagenumbering{roman}       % page numbering with small roman digits for preface and contents
+
+\input{preface.tex}          % preface: abstract, acknowledgement and vita
+
+
+\setcounter{secnumdepth}{2} % section numbering depth
+\setcounter{tocdepth}{2}    % count to the depth of sections
+\tableofcontents            % table of contents appears here
+
+\newpage
+\addcontentsline{toc}{section}{\numberline{}\hspace{-.35in}{\bf List of
+Figures}}
+\listoffigures              % list of figures appears here
+
+\newpage
+\addcontentsline{toc}{section}{\numberline{}\hspace{-.35in}{\bf
+List of Tables}}
+\listoftables              % list of tables appears here
+
+% ~~~~~~~ page style setting for main part ~~~~~~~
+\addtolength{\headheight}{3pt} \pagestyle{fancy} \setlength{\headrulewidth}{0.1pt}
+\renewcommand{\chaptermark}[1]{\markboth{\chaptername\ \thechapter. #1}{}}
+\lhead{\fancyplain{}{\bfseries\footnotesize\sc\leftmark}} \rhead{} \addtolength{\headsep}{-0.1in}
+\cfoot{\fancyplain{}{\bfseries\rm\thepage}}
+
+\newpage
+\pagenumbering {arabic}     % page numbering with arabic
+
+% ~~~~~~~ text part of the dissertation ~~~~~~~~~
+
+\include{chapter-1}
+\include{chapter-2}
+\include{chapter-3}
+%\include{chapter-4}
+%\include{chapter-5}
+%\include{chapter-6}
+
+% ~~~~~~~ bibliography ~~~~~~~~
+\newpage
+\setlength{\baselineskip}{20pt plus 1pt minus 1pt}  % 1-1/2 spacing for whole document
+\addcontentsline{toc}{chapter}{References}
+
+\bibliography{bibliography}
+\bibliographystyle{ieeetr}
+
+\end{document}

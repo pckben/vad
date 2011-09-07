@@ -1,0 +1,118 @@
+%----------------------------------------------------------------------------
+% File          PpHd.tex
+% Author        Ong Kok Leong
+% Description   preamble: the global settings
+%-----------------------------------------------------------------------------
+
+\usepackage{amssymb,amsmath,fancyheadings}
+
+\oddsidemargin  +0.10in %
+\evensidemargin +0.00in %
+\topmargin      +0.15in %
+\textheight     +8.50in %
+\textwidth      +6.25in %
+
+\pagestyle{plain}
+
+\font\Bold=cmbx10 scaled \magstep3
+\def\EndOfProof{\nolinebreak\ \hfill\rule{1.5mm}{2.7mm}}
+\def\endOfProof{\ \hfill\rule{1.5mm}{2.7mm}}
+
+\def\proof{\noindent \textbf{Proof:}\quad}
+
+\renewcommand{\theequation}{\mbox{\rm\thechapter.\arabic{equation}}}
+
+%\newcounter{theorem}
+%\newtheorem{theorem}{Theorem}
+%\renewcommand{\thetheorem}{\thechapter.\arabic{theorem}}
+
+%\newcounter{lemma}
+%\newtheorem{lemma}{Lemma}
+%\renewcommand{\thelemma}{\thechapter.\arabic{lemma}}
+
+%\newcounter{corollary}
+%\newtheorem{corollary}{Corollary}
+%\renewcommand{\thecorollary}{\thechapter.\arabic{corollary}}
+
+%\newcounter{definition}
+%\newtheorem{definition}{Definition}
+%\renewcommand{\thedefinition}{\thechapter.\arabic{definition}}
+
+%\newcounter{algo}
+%\newtheorem{algo}{Algorithm}
+%\renewcommand{\thealgo}{\thechapter.\arabic{algo}}
+
+%\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+%\renewcommand{\thesubfigure}{\thefigure.\alph{subfigure}}
+%\makeatletter
+%\renewcommand{\@thesubfigure}{\thesubfigure:\space}
+%\renewcommand{\p@subfigure}{}
+
+\newcommand{\fig}[1]    {Figure~\ref{Fig:#1}}
+\newcommand{\eq}[1]    {Equation~\ref{eq:#1}}
+
+\def\LEQ.#1.#2.#3{#1\!\leqslant\!#2\!\leqslant\!#3}
+\def\GEQ.#1.#2.#3{#1\!\geqslant\!#2\!\geqslant\!#3}
+\def\emptyset{\varnothing}
+\renewcommand{\theenumi}{\rm \roman{enumi}}
+\renewcommand{\labelenumi}{\rm (\theenumi)}
+\renewcommand{\theenumii}{\rm \alph{enumii}}
+\renewcommand{\labelenumii}{\rm (\theenumii)}
+
+\renewcommand{\topfraction}{0.75}
+\renewcommand{\bottomfraction}{0.75}
+\renewcommand{\textfraction}{0.10}
+
+%
+% Report specific definitions
+%
+
+%
+% Definition in the context of this report.
+%
+\def\reporttitle    {Noise Robust Voice Activity Detection}
+\def\supp           {\varphi}
+\def\psupp          {\varphi^{\mathcal{P}}}
+\def\conf           {\delta}
+\def\pconf          {\delta^{\mathcal{P}}}
+\def\tab            {\hspace{0.8cm}}
+
+%
+% Latin abbreviation
+%
+\usepackage{xspace}
+\def\etc            {etc.\@\xspace}
+\def\etal           {\emph{et\thinspace al}.\@\xspace}
+
+%
+% Set of math shortcut format
+%
+\def\vt             {\mathbf}
+\def\realnumber     {\mathbb{R}}
+\def\complexnumber  {\mathbb{C}}
+\newcommand{\argmax}[1] {\operatorname*{argmax}_{#1}}
+\newcommand{\sgn}[1]    {\operatorname{sgn}(#1)}
+\newcommand{\reci}[1]   {\frac{1}{#1}}
+\newcommand{\test}[2]   {\overset{#1}{\underset{#2}{\gtrless}}}
+
+%
+% Define the set of symbols for the constraint set.
+%
+\def\map            {\Pi}
+\def\gen            {\Upsilon}
+\def\prune          {\Phi}
+\def\selcand        {\Psi}
+\def\compute        {\Theta}
+\def\check          {\Omega}
+
+
+\def\linespaceNormal        {\baselineskip=24pt}
+\def\linespaceTight         {\baselineskip=21pt}
+\def\linespaceVeryTight     {\baselineskip=19pt}
+
+\renewcommand{\bibname}{References}
+
+%
+%-----------------------------------------------------------------------------
+%==== The End Here ====
+%
